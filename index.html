@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>単語データ変換ツール</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Noto Sans JP", sans-serif;
+      background: #f5f7fb;
+      color: #333;
+    }
+
+    header {
+      background: white;
+      padding: 24px 20px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+      color: #2563eb;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 19px;
+    }
+
+    .example {
+      background: #f3f4f6;
+      padding: 12px 15px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      margin-bottom: 15px;
+      line-height: 1.8;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 16px;
+      line-height: 1.7;
+      outline: none;
+      transition: 0.2s;
+      font-family: inherit;
+    }
+
+    textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.9;
+    }
+
+    .convert {
+      background: #2563eb;
+      color: white;
+    }
+
+    .copy {
+      background: #16a34a;
+      color: white;
+    }
+
+    .clear {
+      background: #e5e7eb;
+      color: #333;
+    }
+
+    .message {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #555;
+      min-height: 20px;
+    }
+
+    .success {
+      color: #16a34a;
+      font-weight: bold;
+    }
+
+    .error {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+      padding: 20px;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 22px;
+      }
+
+      main {
+        margin: 20px auto;
+        padding: 0 12px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      textarea {
+        min-height: 180px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>単語データ変換ツール</h1>
+  <p>数字・英単語・日本語を「数字,英単語,日本語」に変換</p>
+</header>
+
+<main>
+
+  <!-- 入力 -->
+  <section class="card">
+    <h2>① データを入力</h2>
+
+    <div class="example">
+      例：<br>
+      1 apple りんご<br>
+      2 book 本<br>
+      3 school 学校
+    </div>
+
+    <textarea
+      id="inputText"
+      placeholder="ここに単語データを入力してください
+
+例：
+1 apple りんご
+2 book 本
+3 school 学校"></textarea>
+
+    <div class="buttons">
+      <button class="convert" onclick="convertData()">
+        変換する
+      </button>
+
+      <button class="clear" onclick="clearAll()">
+        クリア
+      </button>
+    </div>
+
+    <div id="inputMessage" class="message"></div>
+  </section>
+
+
+  <!-- 出力 -->
+  <section class="card">
+    <h2>② 変換結果</h2>
+
+    <div class="example">
+      1,apple,りんご<br>
+      2,book,本<br>
+      3,school,学校
+    </div>
+
+    <textarea
+      id="outputText"
+      placeholder="変換結果がここに表示されます"
+      readonly></textarea>
+
+    <div class="buttons">
+      <button class="copy" onclick="copyResult()">
+        結果をコピー
+      </button>
+    </div>
+
+    <div id="outputMessage" class="message"></div>
+  </section>
+
+</main>
+
+<footer>
+  単語データ変換ツール
+</footer>
+
+
+<script>
+
+  // --------------------------------
+  // データ変換
+  // --------------------------------
+
+  function convertData() {
+
+    const input = document.getElementById("inputText").value.trim();
+    const output = document.getElementById("outputText");
+
+    const inputMessage = document.getElementById("inputMessage");
+    const outputMessage = document.getElementById("outputMessage");
+
+    inputMessage.textContent = "";
+    outputMessage.textContent = "";
+
+    if (!input) {
+      output.value = "";
+      inputMessage.textContent = "データを入力してください。";
+      inputMessage.className = "message error";
+      return;
+    }
+
+    // 改行で分割
+    const lines = input.split(/\r?\n/);
+
+    const result = [];
+    let errorCount = 0;
+
+    lines.forEach((line, index) => {
+
+      line = line.trim();
+
+      // 空行は無視
+      if (!line) {
+        return;
+      }
+
+      /*
+        区切り文字
+
+        ・半角スペース
+        ・全角スペース
+        ・タブ
+        ・カンマ
+        ・全角カンマ
+
+        を認識
+      */
+
+      const parts = line
+        .split(/[\s,，]+/)
+        .filter(Boolean);
+
+      /*
+        基本的に
+
+        数字
+        英単語
+        日本語
+
+        の3項目として処理
+      */
+
+      if (parts.length < 3) {
+        errorCount++;
+        return;
+      }
+
+      const number = parts[0];
+      const english = parts[1];
+
+      // 日本語が複数の単語に分かれていても結合
+      const japanese = parts.slice(2).join("");
+
+      // 数字の確認
+      if (!/^\d+$/.test(number)) {
+        errorCount++;
+        return;
+      }
+
+      // 英単語の確認
+      if (!/^[A-Za-z'-]+$/.test(english)) {
+        errorCount++;
+        return;
+      }
+
+      result.push(
+        `${number},${english},${japanese}`
+      );
+    });
+
+    output.value = result.join("\n");
+
+    if (result.length === 0) {
+
+      inputMessage.textContent =
+        "変換できるデータがありません。形式を確認してください。";
+
+      inputMessage.className = "message error";
+
+      return;
+    }
+
+    if (errorCount > 0) {
+
+      inputMessage.textContent =
+        `${result.length}件を変換しました。${errorCount}行は読み飛ばしました。`;
+
+      inputMessage.className = "message error";
+
+    } else {
+
+      inputMessage.textContent =
+        `${result.length}件のデータを変換しました！`;
+
+      inputMessage.className = "message success";
+    }
+  }
+
+
+  // --------------------------------
+  // コピー
+  // --------------------------------
+
+  async function copyResult() {
+
+    const output = document.getElementById("outputText");
+    const message = document.getElementById("outputMessage");
+
+    if (!output.value) {
+
+      message.textContent =
+        "コピーするデータがありません。";
+
+      message.className = "message error";
+
+      return;
+    }
+
+    try {
+
+      await navigator.clipboard.writeText(output.value);
+
+      message.textContent =
+        "コピーしました！";
+
+      message.className = "message success";
+
+    } catch (error) {
+
+      // 古いブラウザ向け
+      output.select();
+      document.execCommand("copy");
+
+      message.textContent =
+        "コピーしました！";
+
+      message.className = "message success";
+    }
+  }
+
+
+  // --------------------------------
+  // クリア
+  // --------------------------------
+
+  function clearAll() {
+
+    document.getElementById("inputText").value = "";
+    document.getElementById("outputText").value = "";
+
+    document.getElementById("inputMessage").textContent = "";
+    document.getElementById("outputMessage").textContent = "";
+  }
+
+
+  // --------------------------------
+  // Ctrl + Enter でも変換
+  // --------------------------------
+
+  document.getElementById("inputText").addEventListener(
+    "keydown",
+    function(event) {
+
+      if (event.ctrlKey && event.key === "Enter") {
+        convertData();
+      }
+
+    }
+  );
+
+</script>
+
+</body>
+</html>
